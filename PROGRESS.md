@@ -6,7 +6,9 @@
 
 **Session:** 1 — first build
 **Last updated:** 17 November 2026 — by Claude Code
-**Live URL:** none yet [Rule: fill in after the first successful deploy]
+**Live URL:** site created, not yet deployed — https://lca-studio.netlify.app
+(Netlify project `lca-studio`, id `84c5f0e6-b557-4bb5-8d80-cbd6b363c9c0`, team
+`acarrascosaflores`. Both environment variables are set. No deploy has run yet.)
 
 ## Current state
 
@@ -57,8 +59,13 @@ report, and tested the lot in a real browser.
       The SQL is in `docs/supabase-setup.md` under "Open item".
 - [ ] Get the builder's approval for the dark-mode palette (derived here, every
       text pair measured at 4.5:1 or better; see "Build decisions").
-- [ ] Deploy to Netlify via MCP, set `VITE_SUPABASE_URL` and
-      `VITE_SUPABASE_ANON_KEY`, confirm `/studies/<id>` deep links load, then put
+- [ ] **Finish the deploy.** The Netlify project and both environment variables
+      exist; only the deploy itself is outstanding. Either connect
+      `acarras-1403/LCA-Studio` to the `lca-studio` project in the Netlify
+      dashboard so it builds from `main` (the model this spec assumes), or run
+      the deploy locally:
+      `npx netlify-cli deploy --prod --dir dist --site 84c5f0e6-b557-4bb5-8d80-cbd6b363c9c0`
+      after `npm run build`. Then confirm `/studies/<id>` deep links load and put
       the live URL in the header above.
 - [ ] Acceptance criteria pass — work through spec Section 13 on the live site.
       Criteria 1-3, 5, 8-17 were checked locally; 4, 7 and 18 need the deploy.
@@ -146,6 +153,11 @@ report, and tested the lot in a real browser.
 - Work is on branch `claude/practical-mccarthy-n6p96b`, not `main`: this session
   is only permitted to push to that branch. Merge it to `main` when you are happy
   with it, since Netlify deploys from `main`.
+- **Deploy blocked in this session.** Netlify's own deploy command
+  (`npx @netlify/mcp ... --proxy-path ...`, which zips the repo and builds it on
+  Netlify) was refused twice by this session's command-permission classifier, so
+  no deploy has run. The project and its environment variables are in place, so
+  this is the only step left. See "Remaining work" for the two ways to finish it.
 
 ## Notes for next session
 
