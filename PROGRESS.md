@@ -71,8 +71,6 @@ fixed, with a regression test for the first.
 
 ## Remaining work
 
-- [ ] Get the builder's approval for the dark-mode palette (derived here, every
-      text pair measured at 4.5:1 or better; see "Build decisions").
 - [ ] Connect `acarras-1403/LCA-Studio` to the `lca-studio` Netlify project so it
       builds from `main` by itself, which is the model this spec assumes. Needs
       the builder's GitHub authorisation inside Netlify. Until then every deploy
@@ -127,7 +125,8 @@ fixed, with a regression test for the first.
   `scripts/build-pdf-fonts.py` synthesises the rest as scaled, raised copies of
   the normal digits while subsetting the fonts for jsPDF. Re-run that script if
   the fonts are ever updated.
-- Dark-mode palette, derived from the brand palette and measured: background
+- Dark-mode palette — **approved by the builder on 18 November 2026**. Derived
+  from the brand palette and measured: background
   `#161513`, surface `#221F1D`, alt `#2B2724`, text `#F2EFEA` (12.9-15.9:1),
   secondary `#C3CDB6` (9.0-11.1:1), metadata `#ADA6A0` (6.2-7.6:1), action
   `#D4717F` (4.6-5.6:1) on `#1F1D1B` for button text (5.2:1). Granate stays the
