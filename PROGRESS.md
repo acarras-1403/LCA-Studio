@@ -8,8 +8,9 @@
 **Last updated:** 18 November 2026 — by Claude Code
 **Live URL:** https://lca-studio.netlify.app
 (Netlify project `lca-studio`, id `84c5f0e6-b557-4bb5-8d80-cbd6b363c9c0`, team
-`acarrascosaflores`. Both environment variables are set. Deployed 18 November
-2026 from this session's working tree, not yet from `main`.)
+`acarrascosaflores`. Connected to `acarras-1403/LCA-Studio` and building from
+`main`, so a merge to `main` publishes itself. Both environment variables are
+set on the project.)
 
 ## Current state
 
@@ -71,11 +72,6 @@ fixed, with a regression test for the first.
 
 ## Remaining work
 
-- [ ] Connect `acarras-1403/LCA-Studio` to the `lca-studio` Netlify project so it
-      builds from `main` by itself, which is the model this spec assumes. Needs
-      the builder's GitHub authorisation inside Netlify. Until then every deploy
-      is a manual push from a working tree, and the live site can drift from
-      `main`.
 - [ ] Add the logo PNG and tree-ring icon when the builder supplies them, and
       swap the text wordmark in the header and on the PDF cover.
 
@@ -164,14 +160,8 @@ fixed, with a regression test for the first.
   and accepted for an A1 demo; documented as intentional, not to be "fixed".
 - Logo PNG and tree-ring icon are not in the repo, so the header and the PDF
   cover use a text wordmark in granate.
-- Work is on branch `claude/practical-mccarthy-n6p96b`, not `main`: this session
-  is only permitted to push to that branch. Merge it to `main` when you are happy
-  with it, since Netlify deploys from `main`.
-- **The live site is not wired to `main`.** It was deployed by pushing this
-  session's working tree to Netlify's build system, so merging to `main` does not
-  republish it. Connect the repository in the Netlify dashboard, or redeploy by
-  hand after each merge (see "Build decisions" for the command).
 
 ## Notes for next session
 
-None.
+None. The build is finished, live and wired to `main`. If you pick it up again,
+the only open items are the optional logo files and whatever the demo throws up.
