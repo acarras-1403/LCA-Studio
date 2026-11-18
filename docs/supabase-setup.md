@@ -303,27 +303,15 @@ Verified on 2026-11-17: uploading, overwriting or deleting anything under `examp
 is refused with `403 new row violates row-level security policy`, while
 `products/...` writes succeed.
 
-### Open item — one temporary policy still to drop
+Bucket MIME types were narrowed to JPEG, PNG and WebP on 2026-11-18 by migration
+`lca_06_storage_tighten`, which also dropped the one-off `lca_storage_seed_tmp_insert`
+policy created to place the example illustration. Verified immediately afterwards:
+an SVG upload to `products/` is refused with `415 invalid_mime_type`, a PNG upload
+still succeeds, any write under `example/` is refused with `403`, and the example
+illustration is still served.
 
-A one-off policy `lca_storage_seed_tmp_insert` on `storage.objects` was created to
-place the example illustration (anonymous users cannot write under `example/`). The
-migration that removes it, and that narrows the bucket's allowed MIME types to JPEG,
-PNG and WebP only, **has not been applied**: the Supabase MCP approval prompt went
-unanswered twice. The remaining SQL is:
-
-```sql
-drop policy if exists lca_storage_seed_tmp_insert on storage.objects;
-
-update storage.buckets
-   set allowed_mime_types = array['image/jpeg','image/png','image/webp']
- where id = 'lca-product-images';
-```
-
-Impact while it is outstanding: the policy allows an anonymous insert at exactly the
-path `example/northwind-syringe.svg`. Because that object already exists, every write
-to it is still refused (an upsert becomes an update, which the `example/` rule blocks)
-— verified above. The gap would only open if that object were deleted. Apply the SQL
-before the demo goes in front of anyone.
+The example SVG predates the narrowing and remains readable; no further SVG can be
+uploaded by anyone.
 
 ## Seed data
 
@@ -348,7 +336,8 @@ before the demo goes in front of anyone.
 | `lca_03_storage` | `lca-product-images` bucket and its four storage policies |
 | `lca_04_seed_vocabulary` | 57 vocabulary rows |
 | `lca_05_seed_example_study` | Northwind Medical example |
-| (pending) `lca_06_storage_tighten` | see "Open item" above |
+| `lca_06_storage_tighten` | dropped the temporary seeding policy; narrowed the bucket to JPEG, PNG and WebP |
 
 **Last updated:** 2026-07-16 — by Claude Code, session 4 (v5.0 build).
 **Interim update:** 2026-11-17 — interim status banner, list of undocumented live tables, and LCA tool build rules added. Tool A sections unchanged.
+**LCA Studio:** 2026-11-18 — all six `lca_` migrations applied; storage tightened. Tool A sections unchanged.

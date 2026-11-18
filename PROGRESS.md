@@ -15,7 +15,8 @@
 The tool is built and works end to end against the live Supabase project, tested
 in a real browser. Not yet deployed.
 
-**Database** (`purepastures`, `ztkgbowwrlszbbfuhkid`): six `lca_` tables, the
+**Database** (`purepastures`, `ztkgbowwrlszbbfuhkid`): all six migrations applied.
+Six `lca_` tables, the
 `lca_is_example_study` helper, an `updated_at` trigger, RLS with `lca_`-prefixed
 policies on every table, and the public `lca-product-images` bucket with its four
 storage policies. `lca_vocabulary` holds all 57 rows of
@@ -26,7 +27,7 @@ a syringe line illustration under `example/`. Example protection was tested with
 the anon key directly, outside the interface: every update and delete on the
 example affects zero rows, every insert under it is refused with `42501`, and all
 writes under `example/` in storage are refused with 403. Full schema in
-`docs/supabase-setup.md`.
+`docs/supabase-setup.md`. The image bucket accepts JPEG, PNG and WebP only.
 
 **App** (React, Vite, Tailwind, self-hosted fonts): header with EN/ES and
 light/dark toggles, fictional-data banner on every view, 4-step stepper that only
@@ -66,8 +67,6 @@ fixed, with a regression test for the first.
 
 ## Remaining work
 
-- [ ] Apply the pending `lca_06_storage_tighten` migration — see "Known issues".
-      The SQL is in `docs/supabase-setup.md` under "Open item".
 - [ ] Get the builder's approval for the dark-mode palette (derived here, every
       text pair measured at 4.5:1 or better; see "Build decisions").
 - [ ] **Finish the deploy.** The Netlify project and both environment variables
@@ -149,14 +148,6 @@ fixed, with a regression test for the first.
 
 ## Known issues
 
-- **Pending migration.** `lca_06_storage_tighten` has not been applied: it drops
-  the temporary `lca_storage_seed_tmp_insert` storage policy used to place the
-  example illustration, and narrows the bucket's MIME types to JPEG, PNG and
-  WebP. The Supabase MCP approval prompt went unanswered twice. While it is
-  outstanding, the policy allows an anonymous insert at exactly
-  `example/northwind-syringe.svg`; because that object exists, every write to it
-  is still refused (verified), so the gap only opens if the object is deleted.
-  SQL is in `docs/supabase-setup.md` under "Open item".
 - `docs/supabase-setup.md` is still INTERIM for the PurePastures side:
   `ef_table`, `expected_matches` and `emissions_results` remain undocumented.
   This tool does not use them and did not touch them.
