@@ -4,8 +4,8 @@
 > anything. Update it at every save point. Replace content — do not append.
 > History lives in git.
 
-**Session:** 1 — first build
-**Last updated:** 17 November 2026 — by Claude Code
+**Session:** 1 — first build (continued)
+**Last updated:** 18 November 2026 — by Claude Code
 **Live URL:** site created, not yet deployed — https://lca-studio.netlify.app
 (Netlify project `lca-studio`, id `84c5f0e6-b557-4bb5-8d80-cbd6b363c9c0`, team
 `acarrascosaflores`. Both environment variables are set. No deploy has run yet.)
@@ -38,20 +38,31 @@ chain builder. Step 3 generates the Excel template from the chain and validates
 uploads. Step 4 is the results dashboard: totals, process bar chart, hotspot
 table, heat map and data quality panel, plus the PDF and Excel downloads.
 
-**Verified in the browser against the live database:** a full walkthrough —
-create study, draw a 2-process chain, download the template, fill it, upload it,
-read results, download both exports in English and Spanish, have a bad upload
-rejected whole, see the chain-change warning, delete the study and watch the
-product and company go with it. Zero console errors. The spec Section 9 worked
-check reproduces exactly in the interface (24 kWh, 32 tkm, 64.9% share, score
-1.70 Fair) and as a unit test. 36 unit tests pass (`npm test`).
+**Verified in the browser against the live database.** Two passes, both with
+zero console errors:
+
+1. Full walkthrough — create study, draw a 2-process chain, download the
+   template, fill it, upload it, read results, download both exports in English
+   and Spanish, have a bad upload rejected whole, see the chain-change warning,
+   delete the study and watch the product and company go with it.
+2. Acceptance criteria pass — 34 checks covering duplicate, product photos,
+   chain editing, the step 1 controls, language and theme persistence, and the
+   homepage, all passing.
+
+**Spec Section 13: criteria 1-17 are verified. Criterion 18 (deployment) is the
+only one outstanding**, because nothing has been deployed yet. The Section 9
+worked check reproduces exactly in the interface (24 kWh, 32 tkm, 64.9% share,
+score 1.70 Fair) and as a unit test. 39 unit tests pass (`npm test`).
 
 ## Last session
 
 Session 1: moved the reference docs into `docs/`, validated the factor workbook
 (57 rows, zero errors), built the whole database and seeded it, then built the
 entire front end, the Excel template and parser, the Excel export and the PDF
-report, and tested the lot in a real browser.
+report. Then worked through the acceptance criteria in a browser, which turned up
+two real bugs — inserting a process into an existing chain always failed, and the
+document language attribute did not follow a remembered Spanish choice. Both are
+fixed, with a regression test for the first.
 
 ## Remaining work
 
@@ -67,8 +78,8 @@ report, and tested the lot in a real browser.
       `npx netlify-cli deploy --prod --dir dist --site 84c5f0e6-b557-4bb5-8d80-cbd6b363c9c0`
       after `npm run build`. Then confirm `/studies/<id>` deep links load and put
       the live URL in the header above.
-- [ ] Acceptance criteria pass — work through spec Section 13 on the live site.
-      Criteria 1-3, 5, 8-17 were checked locally; 4, 7 and 18 need the deploy.
+- [ ] Re-check criterion 18 (and spot-check the rest) once the site is live.
+      Criteria 1-17 are verified locally against the live database.
 - [ ] Add the logo PNG and tree-ring icon when the builder supplies them, and
       swap the text wordmark in the header and on the PDF cover.
 
@@ -128,6 +139,13 @@ report, and tested the lot in a real browser.
   write under `example/`, and the bucket is public so the image still loads.
 - Country names come from `Intl.DisplayNames` over a fixed ISO code list, so the
   geography dropdown follows the active language without a translation table.
+- A chain write gives **every** row an id, new ones included
+  (`buildChainPayload` in `src/lib/api.js`). PostgREST refuses a bulk write whose
+  objects do not all share the same keys, so a chain mixing saved and new
+  processes was rejected outright. `src/lib/chain.test.js` guards the shape.
+- `I18nProvider` sets `document.documentElement.lang` from an effect, not only
+  when the toggle is used, so a remembered Spanish choice also sets the attribute
+  on first paint after a reload.
 
 ## Known issues
 

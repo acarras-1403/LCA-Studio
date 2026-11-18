@@ -4,6 +4,22 @@
 import { supabase, IMAGE_BUCKET } from './supabase.js'
 import { INDICATOR_CODES } from './indicators.js'
 
+/** A client-side uuid, so new rows can carry an id before they are written. */
+function newId() {
+  try {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
+  } catch { /* fall through */ }
+  const hex = '0123456789abcdef'
+  let out = ''
+  for (let i = 0; i < 36; i += 1) {
+    if (i === 8 || i === 13 || i === 18 || i === 23) out += '-'
+    else if (i === 14) out += '4'
+    else if (i === 19) out += hex[(Math.random() * 4) | 8]
+    else out += hex[(Math.random() * 16) | 0]
+  }
+  return out
+}
+
 function unwrap({ data, error }) {
   if (error) throw error
   return data
@@ -166,20 +182,30 @@ export async function advanceStatus(study, status) {
  * constraints on (study_id, position) and (study_id, name) are checked once at
  * the end of the transaction and reordering never trips over itself.
  */
+/**
+ * Rows for a chain write. Every row carries an id, including the new ones:
+ * PostgREST refuses a bulk write whose objects do not all have the same keys,
+ * so a chain mixing existing and new processes would be rejected outright.
+ * Exported so the shape can be tested without touching the network.
+ */
+export function buildChainPayload(studyId, chain, makeId = newId) {
+  return chain.map((p, i) => ({
+    id: p.id || makeId(),
+    study_id: studyId,
+    position: i + 1,
+    name: p.name.trim(),
+  }))
+}
+
 export async function saveChain(studyId, chain, { clearInventory, chainVersion }) {
-  const keepIds = chain.filter((p) => p.id).map((p) => p.id)
+  const payload = buildChainPayload(studyId, chain)
+  const keepIds = payload.map((p) => p.id)
   if (keepIds.length) {
     await supabase.from('lca_processes').delete().eq('study_id', studyId)
       .not('id', 'in', `(${keepIds.join(',')})`).then(unwrap)
   } else {
     await supabase.from('lca_processes').delete().eq('study_id', studyId).then(unwrap)
   }
-  const payload = chain.map((p, i) => ({
-    ...(p.id ? { id: p.id } : {}),
-    study_id: studyId,
-    position: i + 1,
-    name: p.name.trim(),
-  }))
   const saved = payload.length
     ? await supabase.from('lca_processes').upsert(payload, { onConflict: 'id' })
         .select().then(unwrap)

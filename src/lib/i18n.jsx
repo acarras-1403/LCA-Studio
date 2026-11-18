@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState, useCallback } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react'
 import en from '../i18n/en.js'
 import es from '../i18n/es.js'
 import { readStored, writeStored } from './safeStorage.js'
@@ -47,10 +47,15 @@ export function makeT(lang) {
 export function I18nProvider({ children }) {
   const [lang, setLangState] = useState(detectLanguage)
 
+  // Keep the document's own language in step, including on first paint after a
+  // reload, so assistive technology reads the page in the right language.
+  useEffect(() => {
+    try { document.documentElement.lang = lang === 'es' ? 'es-ES' : 'en-GB' } catch { /* ignore */ }
+  }, [lang])
+
   const setLang = useCallback((next) => {
     setLangState(next)
     writeStored(KEY, next)
-    try { document.documentElement.lang = next === 'es' ? 'es-ES' : 'en-GB' } catch { /* ignore */ }
   }, [])
 
   const value = useMemo(() => ({
