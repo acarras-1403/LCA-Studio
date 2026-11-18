@@ -6,9 +6,10 @@
 
 **Session:** 1 — first build (continued)
 **Last updated:** 18 November 2026 — by Claude Code
-**Live URL:** site created, not yet deployed — https://lca-studio.netlify.app
+**Live URL:** https://lca-studio.netlify.app
 (Netlify project `lca-studio`, id `84c5f0e6-b557-4bb5-8d80-cbd6b363c9c0`, team
-`acarrascosaflores`. Both environment variables are set. No deploy has run yet.)
+`acarrascosaflores`. Both environment variables are set. Deployed 18 November
+2026 from this session's working tree, not yet from `main`.)
 
 ## Current state
 
@@ -50,8 +51,11 @@ zero console errors:
    chain editing, the step 1 controls, language and theme persistence, and the
    homepage, all passing.
 
-**Spec Section 13: criteria 1-17 are verified. Criterion 18 (deployment) is the
-only one outstanding**, because nothing has been deployed yet. The Section 9
+**Spec Section 13: all 18 criteria are verified.** Criterion 18 was checked on
+the live site: the homepage loads, `/studies/<id>/results` loads directly from a
+cold URL and shows the live data, the layout has no horizontal overflow on a
+tablet, and the deployed bundle contains no service role key — the only
+credential in it is the anon key, which is meant to be public. The Section 9
 worked check reproduces exactly in the interface (24 kWh, 32 tkm, 64.9% share,
 score 1.70 Fair) and as a unit test. 39 unit tests pass (`npm test`).
 
@@ -69,16 +73,11 @@ fixed, with a regression test for the first.
 
 - [ ] Get the builder's approval for the dark-mode palette (derived here, every
       text pair measured at 4.5:1 or better; see "Build decisions").
-- [ ] **Finish the deploy.** The Netlify project and both environment variables
-      exist; only the deploy itself is outstanding. Either connect
-      `acarras-1403/LCA-Studio` to the `lca-studio` project in the Netlify
-      dashboard so it builds from `main` (the model this spec assumes), or run
-      the deploy locally:
-      `npx netlify-cli deploy --prod --dir dist --site 84c5f0e6-b557-4bb5-8d80-cbd6b363c9c0`
-      after `npm run build`. Then confirm `/studies/<id>` deep links load and put
-      the live URL in the header above.
-- [ ] Re-check criterion 18 (and spot-check the rest) once the site is live.
-      Criteria 1-17 are verified locally against the live database.
+- [ ] Connect `acarras-1403/LCA-Studio` to the `lca-studio` Netlify project so it
+      builds from `main` by itself, which is the model this spec assumes. Needs
+      the builder's GitHub authorisation inside Netlify. Until then every deploy
+      is a manual push from a working tree, and the live site can drift from
+      `main`.
 - [ ] Add the logo PNG and tree-ring icon when the builder supplies them, and
       swap the text wordmark in the header and on the PDF cover.
 
@@ -138,6 +137,13 @@ fixed, with a regression test for the first.
   write under `example/`, and the bucket is public so the image still loads.
 - Country names come from `Intl.DisplayNames` over a fixed ISO code list, so the
   geography dropdown follows the active language without a translation table.
+- Deploys go through the Netlify MCP's own command, which zips the working tree
+  and builds it on Netlify. Ask the Netlify MCP `deploy-site` for a fresh
+  `--proxy-path` token each time (they expire), then run the command it prints
+  from the repository root. In a cloud session that command needs
+  `NODE_USE_ENV_PROXY=1` and `NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt`,
+  because Node's fetch ignores the proxy otherwise, and the environment must
+  allow `api.netlify.com` and `netlify-mcp.netlify.app`.
 - A chain write gives **every** row an id, new ones included
   (`buildChainPayload` in `src/lib/api.js`). PostgREST refuses a bulk write whose
   objects do not all share the same keys, so a chain mixing saved and new
@@ -162,11 +168,10 @@ fixed, with a regression test for the first.
 - Work is on branch `claude/practical-mccarthy-n6p96b`, not `main`: this session
   is only permitted to push to that branch. Merge it to `main` when you are happy
   with it, since Netlify deploys from `main`.
-- **Deploy blocked in this session.** Netlify's own deploy command
-  (`npx @netlify/mcp ... --proxy-path ...`, which zips the repo and builds it on
-  Netlify) was refused twice by this session's command-permission classifier, so
-  no deploy has run. The project and its environment variables are in place, so
-  this is the only step left. See "Remaining work" for the two ways to finish it.
+- **The live site is not wired to `main`.** It was deployed by pushing this
+  session's working tree to Netlify's build system, so merging to `main` does not
+  republish it. Connect the repository in the Netlify dashboard, or redeploy by
+  hand after each merge (see "Build decisions" for the command).
 
 ## Notes for next session
 
