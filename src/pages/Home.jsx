@@ -8,6 +8,7 @@ import Button from '../components/ui/Button.jsx'
 import Card, { CardBody, CardHeader } from '../components/ui/Card.jsx'
 import Badge from '../components/ui/Badge.jsx'
 import Dialog from '../components/ui/Dialog.jsx'
+import StudyPreview from '../components/StudyPreview.jsx'
 import { Input, Label, Select, FieldError } from '../components/ui/Field.jsx'
 
 function ProductImage({ path, alt, className }) {
@@ -121,34 +122,21 @@ export default function Home() {
                       <ul className="m-0 list-none space-y-3 p-0">
                         {product.studies.map((study) => (
                           <li key={study.id} className="border-t border-line pt-3 first:border-0 first:pt-0">
-                            <dl className="m-0 grid grid-cols-2 gap-x-4 gap-y-0.5 text-[15px]">
-                              <div className="col-span-2 sm:col-span-1">
-                                <dt className="inline text-text-meta">{t('home.referenceYear')}: </dt>
-                                <dd className="m-0 inline font-semibold">{study.reference_year}</dd>
-                              </div>
-                              <div className="col-span-2 sm:col-span-1">
-                                <dt className="inline text-text-meta">{t('home.status')}: </dt>
-                                <dd className="m-0 inline font-semibold">{t(`statusLabel.${study.status}`)}</dd>
-                              </div>
-                              <div className="col-span-2">
-                                <dt className="inline text-text-meta">{t('home.functionalUnit')}: </dt>
-                                <dd className="m-0 inline">
-                                  {formatInteger(study.fu_amount, lang)} × {t(`fuUnits.${study.fu_unit}`)}
-                                </dd>
-                              </div>
-                              <div className="col-span-2">
-                                <dt className="inline text-text-meta">{t('home.lastUpdated')}: </dt>
-                                <dd className="m-0 inline">{formatDateTime(study.updated_at, lang)}</dd>
-                              </div>
-                            </dl>
-                            <div className="mt-2.5 flex flex-wrap gap-2">
+                            <p className="m-0 text-[14px] text-text-meta">
+                              {study.reference_year} — {formatInteger(study.fu_amount, lang)} ×{' '}
+                              {t(`fuUnits.${study.fu_unit}`)} — {formatDateTime(study.updated_at, lang)}
+                            </p>
+                            <div className="mt-3.5">
+                              <StudyPreview study={study} />
+                            </div>
+                            <div className="mt-3.5 flex flex-wrap gap-2">
                               <Button
                                 as={Link}
                                 size="sm"
                                 to={`/studies/${study.id}`}
                                 className="no-underline"
                               >
-                                {t('common.open')}
+                                {(study.rows || []).length ? t('step4.openResults') : t('common.open')}
                               </Button>
                               <Button
                                 size="sm"

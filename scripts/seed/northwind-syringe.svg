@@ -1,31 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" width="640" height="400" role="img" aria-label="Line illustration of a single-use syringe">
-  <rect width="640" height="400" fill="#F7F5F2"/>
-  <g fill="none" stroke="#7A1F2B" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
-    <!-- barrel -->
-    <rect x="178" y="152" width="258" height="96" rx="8"/>
-    <!-- finger flange -->
-    <path d="M436 132 L436 268"/>
-    <!-- plunger rod -->
-    <path d="M436 200 L556 200"/>
-    <path d="M556 164 L556 236"/>
-    <!-- luer tip and needle -->
-    <path d="M178 182 L146 190 L146 210 L178 218"/>
-    <path d="M146 200 L58 200"/>
-    <path d="M58 200 L38 200"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 260" width="640" height="260" role="img" aria-label="Line illustration of a single-use syringe">
+  <rect width="640" height="260" fill="#F7F5F2"/>
+  <rect x="150" y="84" width="318" height="92" rx="6" fill="#FFFFFF" stroke="#7A1F2B" stroke-width="9"/>
+  <g stroke="#8A9A7B" stroke-width="5" stroke-linecap="round">
+    <path d="M186 96 v26"/><path d="M212 96 v16"/><path d="M238 96 v16"/><path d="M264 96 v16"/>
+    <path d="M290 96 v26"/><path d="M316 96 v16"/><path d="M342 96 v16"/><path d="M368 96 v16"/>
+    <path d="M394 96 v26"/>
   </g>
-  <g fill="none" stroke="#8A9A7B" stroke-width="4" stroke-linecap="round">
-    <!-- graduation marks -->
-    <path d="M214 160 L214 184"/>
-    <path d="M250 160 L250 176"/>
-    <path d="M286 160 L286 184"/>
-    <path d="M322 160 L322 176"/>
-    <path d="M358 160 L358 184"/>
-    <path d="M394 160 L394 176"/>
-    <!-- plunger seal -->
-    <path d="M300 152 L300 248"/>
-  </g>
-  <g fill="#8A9A7B" opacity="0.5">
-    <circle cx="214" cy="200" r="5"/>
-    <circle cx="358" cy="200" r="5"/>
-  </g>
+  <path d="M408 92 h26 v76 h-26 z" fill="#7A1F2B"/>
+  <path d="M150 112 l-34 10 v16 l34 10" fill="none" stroke="#7A1F2B" stroke-width="9" stroke-linejoin="round"/>
+  <path d="M116 130 h-44" stroke="#7A1F2B" stroke-width="9" stroke-linecap="round"/>
+  <path d="M468 62 v136" stroke="#7A1F2B" stroke-width="9" stroke-linecap="round"/>
+  <path d="M468 130 h98" stroke="#7A1F2B" stroke-width="9" stroke-linecap="round"/>
+  <path d="M566 92 v76" stroke="#7A1F2B" stroke-width="9" stroke-linecap="round"/>
 </svg>

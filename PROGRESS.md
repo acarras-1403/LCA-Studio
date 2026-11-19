@@ -4,8 +4,8 @@
 > anything. Update it at every save point. Replace content — do not append.
 > History lives in git.
 
-**Session:** 1 — first build (continued)
-**Last updated:** 18 November 2026 — by Claude Code
+**Session:** 2 — results, home and scope redesign
+**Last updated:** 19 November 2026 — by Claude Code
 **Live URL:** https://lca-studio.netlify.app
 (Netlify project `lca-studio`, id `84c5f0e6-b557-4bb5-8d80-cbd6b363c9c0`, team
 `acarrascosaflores`. Connected to `acarras-1403/LCA-Studio` and building from
@@ -62,6 +62,13 @@ score 1.70 Fair) and as a unit test. 39 unit tests pass (`npm test`).
 
 ## Last session
 
+Session 2: redesigned Results around a donut chart by life cycle stage, with the
+impact indicator as visible buttons and a stage filter that narrows the chart,
+the contributors and the inventory together; folded the data quality analysis
+into the inventory; gave the homepage a real impact preview and an Open results
+button; turned step 1 into a checklist; and made the whole thing work on a
+phone, which it previously did not.
+
 Session 1: moved the reference docs into `docs/`, validated the factor workbook
 (57 rows, zero errors), built the whole database and seeded it, then built the
 entire front end, the Excel template and parser, the Excel export and the PDF
@@ -72,6 +79,14 @@ fixed, with a regression test for the first.
 
 ## Remaining work
 
+- [ ] Replace the stored example illustration with the improved drawing in
+      `scripts/seed/northwind-syringe.svg`. Needs two short migrations (open the
+      `example/` path and the SVG MIME type, upload, close them again); the
+      Supabase approval prompt went unanswered.
+- [ ] Inline inventory entry on step 3, which the builder asked for. **Blocked:**
+      spec Section 12 and CLAUDE.md both list "typing inventory data directly
+      into forms" as out of scope, so the spec needs bumping to v1.1 and the
+      Project Governor re-running first.
 - [ ] Add the logo PNG and tree-ring icon when the builder supplies them, and
       swap the text wordmark in the header and on the PDF cover.
 
@@ -132,6 +147,20 @@ fixed, with a regression test for the first.
   write under `example/`, and the bucket is public so the image still loads.
 - Country names come from `Intl.DisplayNames` over a fixed ISO code list, so the
   geography dropdown follows the active language without a translation table.
+- Life cycle stages carry one colour each, defined once in `index.css` as
+  `--stage-1..5` with a matching `--stage-fg-N`, and read through
+  `src/lib/palette.js`. The scale runs granate to sage and its lightness
+  increases strictly, so the five stay apart in greyscale and for colour-blind
+  viewers; every fill and label pair measures 4.5:1 or better in both themes.
+- Results is built around a donut by stage rather than the chain diagram. The
+  chain still lives on step 2 and in the PDF; losing it here is a deliberate
+  trade for something readable on a phone.
+- Step 1's completeness is defined once, in `SCOPE_SECTIONS` in
+  `ScopeForm.jsx`, and both the checklist badge and the fields it opens read
+  from it, so they cannot drift apart. The same section components back the
+  plain stacked form used when creating a study.
+- The homepage loads each study's chain and inventory so it can draw a preview.
+  The inventory select is trimmed to the columns the calculation needs.
 - Deploys go through the Netlify MCP's own command, which zips the working tree
   and builds it on Netlify. Ask the Netlify MCP `deploy-site` for a fresh
   `--proxy-path` token each time (they expire), then run the command it prints

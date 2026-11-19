@@ -44,15 +44,37 @@ export function vocabularyMap(items) {
   return Object.fromEntries((items || []).map((v) => [v.id, v]))
 }
 
-/** Home: every company with its products and studies, in display order. */
+/**
+ * Home: every company with its products and studies, in display order, plus
+ * enough of each study's chain and inventory to draw its impact preview. The
+ * inventory selection is trimmed to the columns the calculation needs, since
+ * this runs on every visit to the homepage.
+ */
 export async function loadHome() {
-  const [companies, products, studies] = await Promise.all([
+  const [companies, products, studies, processes, rows] = await Promise.all([
     supabase.from('lca_companies').select('*').then(unwrap),
     supabase.from('lca_products').select('*').then(unwrap),
     supabase.from('lca_studies').select('*').then(unwrap),
+    supabase.from('lca_processes').select('id,study_id,position,name')
+      .order('position', { ascending: true }).then(unwrap),
+    supabase.from('lca_inventory_rows')
+      .select('id,study_id,process_id,unit,annual_quantity,distance_km,data_quality,'
+        + 'factor_gwp,factor_water,factor_res_minerals,factor_res_fossils,factor_ecotox')
+      .then(unwrap),
   ])
+  const processesByStudy = {}
+  for (const p of processes) (processesByStudy[p.study_id] ||= []).push(p)
+  const rowsByStudy = {}
+  for (const r of rows) (rowsByStudy[r.study_id] ||= []).push(r)
+
   const byProduct = {}
-  for (const s of studies) (byProduct[s.product_id] ||= []).push(s)
+  for (const s of studies) {
+    (byProduct[s.product_id] ||= []).push({
+      ...s,
+      processes: processesByStudy[s.id] || [],
+      rows: rowsByStudy[s.id] || [],
+    })
+  }
   for (const list of Object.values(byProduct)) {
     list.sort((a, b) => String(b.updated_at).localeCompare(String(a.updated_at)))
   }

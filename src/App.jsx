@@ -22,7 +22,7 @@ export default function App() {
       </a>
       <Header />
       <Banner />
-      <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 py-7">
+      <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 py-5 sm:py-7">
         {configError ? (
           <p role="alert" className="rounded-brand border border-action bg-surface px-4 py-3 font-semibold text-action">
             {configError}

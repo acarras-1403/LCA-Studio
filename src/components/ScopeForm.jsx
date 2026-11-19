@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../lib/i18n.jsx'
 import { INDICATOR_CODES } from '../lib/indicators.js'
-import { countryOptions, REFERENCE_YEARS } from '../data/countries.js'
+import { countryOptions, countryName, REFERENCE_YEARS } from '../data/countries.js'
 import { IMAGE_TYPES, IMAGE_MAX_BYTES } from '../lib/api.js'
 import { publicImageUrl } from '../lib/supabase.js'
+import { formatInteger } from '../lib/format.js'
 import Button from './ui/Button.jsx'
 import Card, { CardBody, CardHeader } from './ui/Card.jsx'
 import { Field, Input, Select, Label, Help, FieldError, LockedValue } from './ui/Field.jsx'
@@ -88,6 +89,57 @@ export function validateScope(form, t) {
   return errors
 }
 
+/**
+ * The checklist on step 1 is driven from here, so the status a section shows
+ * and the fields it opens can never drift apart.
+ */
+export const SCOPE_SECTIONS = [
+  {
+    id: 'product',
+    titleKey: 'step1.sectionIdentity',
+    complete: (f) => Boolean(f.companyName.trim() && f.productName.trim()),
+    summary: (f) => [f.companyName.trim(), f.productName.trim()].filter(Boolean).join(', '),
+  },
+  {
+    id: 'functional_unit',
+    titleKey: 'step1.functionalUnit',
+    complete: (f) => Number(f.fu_amount) > 0 && Number(f.annual_production) > 0,
+    summary: (f, t, lang) => {
+      const fu = Number(f.fu_amount) > 0
+        ? `${formatInteger(f.fu_amount, lang)} × ${t(`fuUnits.${f.fu_unit}`)}` : ''
+      const prod = Number(f.annual_production) > 0
+        ? `${formatInteger(f.annual_production, lang)} ${t(`fuUnitsAnnual.${f.fu_unit}`)}` : ''
+      return [fu, prod].filter(Boolean).join(', ')
+    },
+  },
+  {
+    id: 'goal',
+    titleKey: 'step1.sectionGoal',
+    complete: () => true,
+    summary: (f, t) => `${t(`intendedApplication.${f.intended_application}`)}, ${t(`intendedAudience.${f.intended_audience}`)}`,
+  },
+  {
+    id: 'scope',
+    titleKey: 'step1.sectionScope',
+    complete: () => true,
+    summary: (f, t, lang) => [
+      t(`cutoff.${f.cutoff}`),
+      t(`allocation.${f.allocation}`),
+      countryName(f.geography, lang),
+      f.reference_year,
+    ].join(', '),
+  },
+  {
+    id: 'indicators',
+    titleKey: 'step1.indicators',
+    complete: (f) => f.selected_indicators.length > 0,
+    summary: (f, t) => (f.selected_indicators.length
+      ? INDICATOR_CODES.filter((c) => f.selected_indicators.includes(c))
+        .map((c) => t(`indicatorsShort.${c}`)).join(', ')
+      : ''),
+  },
+]
+
 function ImageField({ product, readOnly, pendingFile, onPickFile, onRemove }) {
   const { t } = useI18n()
   const [error, setError] = useState(null)
@@ -130,7 +182,7 @@ function ImageField({ product, readOnly, pendingFile, onPickFile, onRemove }) {
         )}
         {!readOnly ? (
           <div className="flex flex-col gap-2">
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-brand border border-action px-4 py-2 font-semibold text-action hover:bg-action hover:text-action-fg">
+            <label className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-brand border border-action px-4 py-2 font-semibold text-action hover:bg-action hover:text-action-fg">
               <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={pick} />
               {shown ? t('step1.replacePhoto') : t('step1.uploadPhoto')}
             </label>
@@ -149,266 +201,241 @@ function ImageField({ product, readOnly, pendingFile, onPickFile, onRemove }) {
   )
 }
 
-/**
- * Step 1's form. Used both for a new study and for editing an existing one.
- * Every field is disabled when `readOnly` (the example study).
- */
-export default function ScopeForm({
-  form, setForm, errors, readOnly, product, companySuggestions = [],
-  pendingImage, onPickImage, onRemoveImage, showImage = true,
-}) {
-  const { t, lang } = useI18n()
-  const countries = useMemo(() => countryOptions(lang), [lang])
+// --- the five field groups, shared by the plain form and the checklist ------
+
+export function ProductSection({ form, setForm, errors, readOnly, product, companySuggestions = [], pendingImage, onPickImage, onRemoveImage, showImage = true }) {
+  const { t } = useI18n()
+  const set = (key) => (e) => setForm({ ...form, [key]: e.target.value })
+  return (
+    <>
+      <Field id="companyName" label={t('step1.companyName')} help={t('step1.companyNameHelp')}
+        required error={errors.companyName}>
+        {({ id, describedBy }) => (
+          <>
+            <Input id={id} list="company-suggestions" value={form.companyName} maxLength={120}
+              disabled={readOnly} aria-describedby={describedBy} invalid={!!errors.companyName}
+              onChange={set('companyName')} />
+            <datalist id="company-suggestions">
+              {companySuggestions.map((name) => <option key={name} value={name} />)}
+            </datalist>
+          </>
+        )}
+      </Field>
+      <Field id="productName" label={t('step1.productName')} help={t('step1.productNameHelp')}
+        required error={errors.productName}>
+        {({ id, describedBy }) => (
+          <Input id={id} value={form.productName} maxLength={120} disabled={readOnly}
+            aria-describedby={describedBy} invalid={!!errors.productName} onChange={set('productName')} />
+        )}
+      </Field>
+      {showImage ? (
+        <ImageField product={product} readOnly={readOnly} pendingFile={pendingImage}
+          onPickFile={onPickImage} onRemove={onRemoveImage} />
+      ) : null}
+    </>
+  )
+}
+
+export function FunctionalUnitSection({ form, setForm, errors, readOnly }) {
+  const { t } = useI18n()
   const showsPackage = ['box', 'pallet'].includes(form.fu_unit)
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value })
+  return (
+    <>
+      <div className="mb-5">
+        <Label htmlFor="fu_amount" required>{t('step1.functionalUnit')}</Label>
+        <div className="mt-1.5 flex flex-wrap gap-2">
+          <Input id="fu_amount" type="number" min="0" step="any" className="max-w-[9rem]"
+            value={form.fu_amount} disabled={readOnly} invalid={!!errors.fu_amount}
+            aria-label={t('step1.fuAmount')} onChange={set('fu_amount')} />
+          <Select
+            className="max-w-full sm:max-w-[18rem]"
+            value={form.fu_unit}
+            disabled={readOnly}
+            aria-label={t('step1.fuUnit')}
+            onChange={(e) => setForm({
+              ...form,
+              fu_unit: e.target.value,
+              units_per_package: ['box', 'pallet'].includes(e.target.value) ? form.units_per_package : '',
+            })}
+          >
+            {FU_UNITS.map((u) => <option key={u} value={u}>{t(`fuUnits.${u}`)}</option>)}
+          </Select>
+        </div>
+        <Help>{t('step1.functionalUnitHelp')}</Help>
+        <FieldError>{errors.fu_amount}</FieldError>
+      </div>
 
-  function toggleIndicator(code) {
+      {showsPackage ? (
+        <Field id="units_per_package" label={t('step1.unitsPerPackage')}
+          help={t('step1.unitsPerPackageHelp')} error={errors.units_per_package}>
+          {({ id, describedBy }) => (
+            <Input id={id} type="number" min="1" step="1" className="max-w-[12rem]"
+              value={form.units_per_package} disabled={readOnly} aria-describedby={describedBy}
+              invalid={!!errors.units_per_package} onChange={set('units_per_package')} />
+          )}
+        </Field>
+      ) : null}
+
+      <div className="mb-5">
+        <Label htmlFor="annual_production" required>{t('step1.annualProduction')}</Label>
+        <div className="mt-1.5 flex flex-wrap items-center gap-2">
+          <Input id="annual_production" type="number" min="0" step="any" className="max-w-[14rem]"
+            value={form.annual_production} disabled={readOnly} invalid={!!errors.annual_production}
+            onChange={set('annual_production')} />
+          <span className="text-text-meta">{t(`fuUnitsAnnual.${form.fu_unit}`)}</span>
+        </div>
+        <Help>{t('step1.annualProductionHelp')}</Help>
+        <FieldError>{errors.annual_production}</FieldError>
+      </div>
+    </>
+  )
+}
+
+export function GoalSection({ form, setForm, readOnly }) {
+  const { t } = useI18n()
+  const set = (key) => (e) => setForm({ ...form, [key]: e.target.value })
+  return (
+    <>
+      <Field id="intended_application" label={t('step1.intendedApplication')}
+        help={t('step1.intendedApplicationHelp')} required>
+        {({ id, describedBy }) => (
+          <Select id={id} value={form.intended_application} disabled={readOnly}
+            aria-describedby={describedBy} onChange={set('intended_application')}>
+            {APPLICATIONS.map((v) => <option key={v} value={v}>{t(`intendedApplication.${v}`)}</option>)}
+          </Select>
+        )}
+      </Field>
+      <Field id="intended_audience" label={t('step1.intendedAudience')}
+        help={t('step1.intendedAudienceHelp')} required>
+        {({ id, describedBy }) => (
+          <Select id={id} value={form.intended_audience} disabled={readOnly}
+            aria-describedby={describedBy} onChange={set('intended_audience')}>
+            {AUDIENCES.map((v) => <option key={v} value={v}>{t(`intendedAudience.${v}`)}</option>)}
+          </Select>
+        )}
+      </Field>
+    </>
+  )
+}
+
+export function LockedSection() {
+  const { t } = useI18n()
+  return (
+    <>
+      <LockedValue label={t('step1.comparativeAssertion')}
+        value={`${t('common.no')} — ${t('step1.locked')}`} help={t('step1.comparativeAssertionHelp')} />
+      <LockedValue label={t('step1.systemBoundary')}
+        value={`${t('fixed.cradleToGate')} — ${t('step1.locked')}`} help={t('step1.systemBoundaryHelp')} />
+      <LockedValue label={t('step1.lciaMethod')} value={t('app.demoLabel')} />
+    </>
+  )
+}
+
+export function ScopeSection({ form, setForm, readOnly }) {
+  const { t, lang } = useI18n()
+  const countries = useMemo(() => countryOptions(lang), [lang])
+  const set = (key) => (e) => setForm({ ...form, [key]: e.target.value })
+  return (
+    <>
+      <Field id="cutoff" label={t('step1.cutoff')} help={t('step1.cutoffHelp')} required>
+        {({ id, describedBy }) => (
+          <Select id={id} value={form.cutoff} disabled={readOnly} aria-describedby={describedBy}
+            onChange={set('cutoff')}>
+            {CUTOFFS.map((v) => <option key={v} value={v}>{t(`cutoff.${v}`)}</option>)}
+          </Select>
+        )}
+      </Field>
+      <Field id="allocation" label={t('step1.allocation')} help={t('step1.allocationHelp')} required>
+        {({ id, describedBy }) => (
+          <Select id={id} value={form.allocation} disabled={readOnly} aria-describedby={describedBy}
+            onChange={set('allocation')}>
+            {ALLOCATIONS.map((v) => <option key={v} value={v}>{t(`allocation.${v}`)}</option>)}
+          </Select>
+        )}
+      </Field>
+      <Field id="data_quality_approach" label={t('step1.dataQualityApproach')}
+        help={t('step1.dataQualityApproachHelp')} required>
+        {({ id, describedBy }) => (
+          <Select id={id} value={form.data_quality_approach} disabled={readOnly}
+            aria-describedby={describedBy} onChange={set('data_quality_approach')}>
+            {DQ_APPROACHES.map((v) => <option key={v} value={v}>{t(`dataQualityApproach.${v}`)}</option>)}
+          </Select>
+        )}
+      </Field>
+      <Field id="geography" label={t('step1.geography')} help={t('step1.geographyHelp')} required>
+        {({ id, describedBy }) => (
+          <Select id={id} value={form.geography} disabled={readOnly} aria-describedby={describedBy}
+            onChange={set('geography')}>
+            {countries.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
+          </Select>
+        )}
+      </Field>
+      <Field id="reference_year" label={t('step1.referenceYear')} help={t('step1.referenceYearHelp')} required>
+        {({ id, describedBy }) => (
+          <Select id={id} value={form.reference_year} disabled={readOnly} aria-describedby={describedBy}
+            onChange={set('reference_year')}>
+            {REFERENCE_YEARS.map((y) => <option key={y} value={String(y)}>{y}</option>)}
+          </Select>
+        )}
+      </Field>
+    </>
+  )
+}
+
+export function IndicatorsSection({ form, setForm, errors, readOnly }) {
+  const { t } = useI18n()
+  function toggle(code) {
     const next = form.selected_indicators.includes(code)
       ? form.selected_indicators.filter((c) => c !== code)
       : [...form.selected_indicators, code]
     setForm({ ...form, selected_indicators: next })
   }
+  return (
+    <>
+      <Help>{t('step1.indicatorsHelp')}</Help>
+      <fieldset className="mt-3 border-0 p-0" disabled={readOnly}>
+        <legend className="sr-only">{t('step1.indicators')}</legend>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {INDICATOR_CODES.map((code) => (
+            <label key={code} className="flex min-h-[44px] items-start gap-2.5 rounded-brand border border-line bg-surface px-3 py-2">
+              <input type="checkbox" className="mt-1 h-4 w-4 accent-[var(--action)]"
+                checked={form.selected_indicators.includes(code)} disabled={readOnly}
+                onChange={() => toggle(code)} />
+              <span>{t(`indicators.${code}`)}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <FieldError>{errors.selected_indicators}</FieldError>
+    </>
+  )
+}
 
+/** The plain stacked form, used when creating a study. */
+export default function ScopeForm(props) {
+  const { t } = useI18n()
   return (
     <div className="grid gap-5 lg:grid-cols-2">
       <Card>
         <CardHeader><h2 className="text-[20px]">{t('step1.sectionIdentity')}</h2></CardHeader>
-        <CardBody>
-          <Field id="companyName" label={t('step1.companyName')} help={t('step1.companyNameHelp')}
-            required error={errors.companyName}>
-            {({ id, describedBy }) => (
-              <>
-                <Input
-                  id={id}
-                  list="company-suggestions"
-                  value={form.companyName}
-                  maxLength={120}
-                  disabled={readOnly}
-                  aria-describedby={describedBy}
-                  invalid={!!errors.companyName}
-                  onChange={set('companyName')}
-                />
-                <datalist id="company-suggestions">
-                  {companySuggestions.map((name) => <option key={name} value={name} />)}
-                </datalist>
-              </>
-            )}
-          </Field>
-
-          <Field id="productName" label={t('step1.productName')} help={t('step1.productNameHelp')}
-            required error={errors.productName}>
-            {({ id, describedBy }) => (
-              <Input id={id} value={form.productName} maxLength={120} disabled={readOnly}
-                aria-describedby={describedBy} invalid={!!errors.productName}
-                onChange={set('productName')} />
-            )}
-          </Field>
-
-          {showImage ? (
-            <ImageField
-              product={product}
-              readOnly={readOnly}
-              pendingFile={pendingImage}
-              onPickFile={onPickImage}
-              onRemove={onRemoveImage}
-            />
-          ) : null}
-        </CardBody>
+        <CardBody><ProductSection {...props} /></CardBody>
       </Card>
-
       <Card>
         <CardHeader><h2 className="text-[20px]">{t('step1.functionalUnit')}</h2></CardHeader>
-        <CardBody>
-          <div className="mb-5">
-            <Label htmlFor="fu_amount" required>{t('step1.functionalUnit')}</Label>
-            <div className="mt-1.5 flex gap-2">
-              <Input
-                id="fu_amount"
-                type="number"
-                min="0"
-                step="any"
-                className="max-w-[9rem]"
-                value={form.fu_amount}
-                disabled={readOnly}
-                invalid={!!errors.fu_amount}
-                aria-label={t('step1.fuAmount')}
-                onChange={set('fu_amount')}
-              />
-              <Select
-                value={form.fu_unit}
-                disabled={readOnly}
-                aria-label={t('step1.fuUnit')}
-                onChange={(e) => setForm({
-                  ...form,
-                  fu_unit: e.target.value,
-                  units_per_package: ['box', 'pallet'].includes(e.target.value)
-                    ? form.units_per_package : '',
-                })}
-              >
-                {FU_UNITS.map((u) => (
-                  <option key={u} value={u}>{t(`fuUnits.${u}`)}</option>
-                ))}
-              </Select>
-            </div>
-            <Help>{t('step1.functionalUnitHelp')}</Help>
-            <FieldError>{errors.fu_amount}</FieldError>
-          </div>
-
-          {showsPackage ? (
-            <Field id="units_per_package" label={t('step1.unitsPerPackage')}
-              help={t('step1.unitsPerPackageHelp')} error={errors.units_per_package}>
-              {({ id, describedBy }) => (
-                <Input id={id} type="number" min="1" step="1" className="max-w-[12rem]"
-                  value={form.units_per_package} disabled={readOnly}
-                  aria-describedby={describedBy} invalid={!!errors.units_per_package}
-                  onChange={set('units_per_package')} />
-              )}
-            </Field>
-          ) : null}
-
-          <div className="mb-5">
-            <Label htmlFor="annual_production" required>{t('step1.annualProduction')}</Label>
-            <div className="mt-1.5 flex items-center gap-2">
-              <Input
-                id="annual_production"
-                type="number"
-                min="0"
-                step="any"
-                className="max-w-[14rem]"
-                value={form.annual_production}
-                disabled={readOnly}
-                invalid={!!errors.annual_production}
-                onChange={set('annual_production')}
-              />
-              <span className="text-text-meta">{t(`fuUnitsAnnual.${form.fu_unit}`)}</span>
-            </div>
-            <Help>{t('step1.annualProductionHelp')}</Help>
-            <FieldError>{errors.annual_production}</FieldError>
-          </div>
-        </CardBody>
+        <CardBody><FunctionalUnitSection {...props} /></CardBody>
       </Card>
-
       <Card>
         <CardHeader><h2 className="text-[20px]">{t('step1.sectionGoal')}</h2></CardHeader>
-        <CardBody>
-          <Field id="intended_application" label={t('step1.intendedApplication')}
-            help={t('step1.intendedApplicationHelp')} required>
-            {({ id, describedBy }) => (
-              <Select id={id} value={form.intended_application} disabled={readOnly}
-                aria-describedby={describedBy} onChange={set('intended_application')}>
-                {APPLICATIONS.map((v) => (
-                  <option key={v} value={v}>{t(`intendedApplication.${v}`)}</option>
-                ))}
-              </Select>
-            )}
-          </Field>
-
-          <Field id="intended_audience" label={t('step1.intendedAudience')}
-            help={t('step1.intendedAudienceHelp')} required>
-            {({ id, describedBy }) => (
-              <Select id={id} value={form.intended_audience} disabled={readOnly}
-                aria-describedby={describedBy} onChange={set('intended_audience')}>
-                {AUDIENCES.map((v) => (
-                  <option key={v} value={v}>{t(`intendedAudience.${v}`)}</option>
-                ))}
-              </Select>
-            )}
-          </Field>
-
-          <LockedValue
-            label={t('step1.comparativeAssertion')}
-            value={`${t('common.no')} — ${t('step1.locked')}`}
-            help={t('step1.comparativeAssertionHelp')}
-          />
-          <LockedValue
-            label={t('step1.systemBoundary')}
-            value={`${t('fixed.cradleToGate')} — ${t('step1.locked')}`}
-            help={t('step1.systemBoundaryHelp')}
-          />
-          <LockedValue
-            label={t('step1.lciaMethod')}
-            value={t('app.demoLabel')}
-          />
-        </CardBody>
+        <CardBody><GoalSection {...props} /><LockedSection /></CardBody>
       </Card>
-
       <Card>
         <CardHeader><h2 className="text-[20px]">{t('step1.sectionScope')}</h2></CardHeader>
-        <CardBody>
-          <Field id="cutoff" label={t('step1.cutoff')} help={t('step1.cutoffHelp')} required>
-            {({ id, describedBy }) => (
-              <Select id={id} value={form.cutoff} disabled={readOnly}
-                aria-describedby={describedBy} onChange={set('cutoff')}>
-                {CUTOFFS.map((v) => <option key={v} value={v}>{t(`cutoff.${v}`)}</option>)}
-              </Select>
-            )}
-          </Field>
-
-          <Field id="allocation" label={t('step1.allocation')} help={t('step1.allocationHelp')} required>
-            {({ id, describedBy }) => (
-              <Select id={id} value={form.allocation} disabled={readOnly}
-                aria-describedby={describedBy} onChange={set('allocation')}>
-                {ALLOCATIONS.map((v) => <option key={v} value={v}>{t(`allocation.${v}`)}</option>)}
-              </Select>
-            )}
-          </Field>
-
-          <Field id="data_quality_approach" label={t('step1.dataQualityApproach')}
-            help={t('step1.dataQualityApproachHelp')} required>
-            {({ id, describedBy }) => (
-              <Select id={id} value={form.data_quality_approach} disabled={readOnly}
-                aria-describedby={describedBy} onChange={set('data_quality_approach')}>
-                {DQ_APPROACHES.map((v) => (
-                  <option key={v} value={v}>{t(`dataQualityApproach.${v}`)}</option>
-                ))}
-              </Select>
-            )}
-          </Field>
-
-          <Field id="geography" label={t('step1.geography')} help={t('step1.geographyHelp')} required>
-            {({ id, describedBy }) => (
-              <Select id={id} value={form.geography} disabled={readOnly}
-                aria-describedby={describedBy} onChange={set('geography')}>
-                {countries.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
-              </Select>
-            )}
-          </Field>
-
-          <Field id="reference_year" label={t('step1.referenceYear')}
-            help={t('step1.referenceYearHelp')} required>
-            {({ id, describedBy }) => (
-              <Select id={id} value={form.reference_year} disabled={readOnly}
-                aria-describedby={describedBy} onChange={set('reference_year')}>
-                {REFERENCE_YEARS.map((y) => <option key={y} value={String(y)}>{y}</option>)}
-              </Select>
-            )}
-          </Field>
-        </CardBody>
+        <CardBody><ScopeSection {...props} /></CardBody>
       </Card>
-
       <Card className="lg:col-span-2">
         <CardHeader><h2 className="text-[20px]">{t('step1.indicators')}</h2></CardHeader>
-        <CardBody>
-          <Help>{t('step1.indicatorsHelp')}</Help>
-          <fieldset className="mt-3 border-0 p-0" disabled={readOnly}>
-            <legend className="sr-only">{t('step1.indicators')}</legend>
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {INDICATOR_CODES.map((code) => (
-                <label key={code} className="flex items-start gap-2.5 rounded-brand border border-line bg-surface px-3 py-2">
-                  <input
-                    type="checkbox"
-                    className="mt-1 h-4 w-4 accent-[var(--action)]"
-                    checked={form.selected_indicators.includes(code)}
-                    disabled={readOnly}
-                    onChange={() => toggleIndicator(code)}
-                  />
-                  <span>{t(`indicators.${code}`)}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          <FieldError>{errors.selected_indicators}</FieldError>
-        </CardBody>
+        <CardBody><IndicatorsSection {...props} /></CardBody>
       </Card>
     </div>
   )

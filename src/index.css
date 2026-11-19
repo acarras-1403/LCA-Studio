@@ -21,6 +21,19 @@
   --heat-high: #7A1F2B;
   --nodata: #CFCAC2;
   --nodata-fg: #4A4540;
+  /* Life cycle stage scale, derived from the brand palette. Hue runs granate to
+     sage and lightness increases strictly, so the five stay apart for viewers
+     with colour blindness and in greyscale. Each -fg was measured on its fill. */
+  --stage-1: #7A1F2B; --stage-fg-1: #FFFFFF;
+  --stage-2: #944229; --stage-fg-2: #FFFFFF;
+  --stage-3: #9F5F2E; --stage-fg-3: #FFFFFF;
+  --stage-4: #B59345; --stage-fg-4: #1F1D1B;
+  --stage-5: #A7BF6F; --stage-fg-5: #1F1D1B;
+  /* Data quality: one hue, three strengths. */
+  --q-measured: #7A1F2B;   --q-measured-fg: #FFFFFF;
+  --q-calculated: #B7C0A6; --q-calculated-fg: #1F1D1B;
+  --q-estimated: #F3F5EF;  --q-estimated-fg: #1F1D1B;
+  --q-estimated-line: #C6CDBC;
 }
 
 [data-theme='dark'] {
@@ -39,6 +52,15 @@
   --heat-high: #D4717F;
   --nodata: #3A3633;
   --nodata-fg: #C8C2BA;
+  --stage-1: #D4717F; --stage-fg-1: #1F1D1B;
+  --stage-2: #D08A5E; --stage-fg-2: #1F1D1B;
+  --stage-3: #C9A05A; --stage-fg-3: #1F1D1B;
+  --stage-4: #B4BE72; --stage-fg-4: #1F1D1B;
+  --stage-5: #CBD6A5; --stage-fg-5: #1F1D1B;
+  --q-measured: #D4717F;   --q-measured-fg: #1F1D1B;
+  --q-calculated: #9AAB84; --q-calculated-fg: #1F1D1B;
+  --q-estimated: #3A3633;  --q-estimated-fg: #F2EFEA;
+  --q-estimated-line: #4A4540;
 }
 
 html { background: var(--body); }

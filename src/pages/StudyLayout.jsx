@@ -83,26 +83,26 @@ export default function StudyLayout() {
 
   return (
     <StudyContext.Provider value={value}>
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-start gap-4">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 sm:mb-6">
+        <div className="flex min-w-0 items-center gap-3 sm:gap-4">
           {imageUrl ? (
             <img
               src={imageUrl}
               alt={product?.name || ''}
-              className="h-20 w-20 rounded-brand border border-line bg-surface object-contain"
+              className="h-12 w-12 shrink-0 rounded-brand border border-line bg-surface object-contain sm:h-20 sm:w-20"
             />
           ) : null}
-          <div>
-            <p className="m-0 text-[15px] text-text-meta">{company?.name}</p>
-            <h1 className="text-[28px]">{product?.name}</h1>
-            <p className="m-0 mt-1 text-[15px] text-text-meta">
+          <div className="min-w-0">
+            <p className="m-0 text-[14px] text-text-meta sm:text-[15px]">{company?.name}</p>
+            <h1 className="text-[21px] sm:text-[28px]">{product?.name}</h1>
+            <p className="m-0 mt-0.5 text-[14px] text-text-meta sm:mt-1 sm:text-[15px]">
               {functionalUnitText({ study, t, lang })} — {study.reference_year}
             </p>
           </div>
         </div>
-        <div className="flex flex-col items-end gap-2">
+        <div className="flex flex-wrap items-center gap-2 sm:flex-col sm:items-end">
           {readOnly ? <Badge tone="fair">{t('home.exampleBadge')}</Badge> : null}
-          <Badge>{t('app.demoLabel')}</Badge>
+          <Badge className="hidden sm:inline-flex">{t('app.demoLabel')}</Badge>
         </div>
       </div>
 
